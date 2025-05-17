@@ -25,11 +25,11 @@ def get_user_results(db: Session, user_id: int):
     return db.query(models.ClassificationResult).filter(models.ClassificationResult.user_id == user_id).all()
 
 
-def get_class_counts(db: Session):
+def get_class_counts(db: Session,user_id:int):
     results = db.query(
         models.ClassificationResult.class_name,
-        func.count(models.ClassificationResult.class_name).label("count")
-    ).group_by(models.ClassificationResult.class_name).all()
+        func.count(models.ClassificationResult.class_name).label("count")).filter(
+        models.ClassificationResult.user_id == user_id ).group_by(models.ClassificationResult.class_name).all()
     
     return results
 

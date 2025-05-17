@@ -77,8 +77,83 @@ async def get_class_counts(
     db: Session = Depends(get_db),
     current_user: int = Depends(auth.get_current_user)):
     try:
-        class_counts = crud.get_class_counts(db)
+        class_counts = crud.get_class_counts(db,current_user.id)
         return {class_name: count for class_name, count in class_counts}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+import os
+
+
+os.makedirs("temp_images", exist_ok=True)
+
+@app.get("/camera_demo/", response_class=HTMLResponse)
+async def camera_demo():
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Camera Demo</title>
+        <script>
+            async function captureImage() {
+                const video = document.getElementById('video');
+                const canvas = document.getElementById('canvas');
+                const resultDiv = document.getElementById('result');
+                
+                
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = canvas.toDataURL('image/jpeg');
+                
+                
+                const blob = await fetch(imageData).then(res => res.blob());
+                const formData = new FormData();
+                formData.append('file', blob, 'capture.jpg');
+                
+                const response = await fetch('/classify_demo/', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `class: ${data.class_name}, acc : ${data.confidence.toFixed(2)}%`;
+            }
+            
+            // تشغيل الكاميرا
+            async function startCamera() {
+                const video = document.getElementById('video');
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    video.srcObject = stream;
+                } catch (err) {
+                    console.error("Error accessing camera:", err);
+                }
+            }
+            
+            window.onload = startCamera;
+        </script>
+    </head>
+    <body>
+        <h1>camera try</h1>
+        <video id="video" width="640" height="480" autoplay></video>
+        <button onclick="captureImage()">catch and classifiy</button>
+        <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+        <div id="result" style="margin-top:20px; font-size:20px;"></div>
+    </body>
+    </html>
+    """
+
+@app.post("/classify_demo/")
+async def classify_demo(
+    file: UploadFile = File(...),
+):
+    try:
+        image_bytes = await file.read()
+        waste_class, confidence = classify_waste(image_bytes)
+        return {"class_name": waste_class, "confidence": confidence}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
