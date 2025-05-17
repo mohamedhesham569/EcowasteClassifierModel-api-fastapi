@@ -5,10 +5,31 @@ from tensorflow.keras.preprocessing.image import img_to_array
 from PIL import Image
 import io
 import os 
+
+
+
 waste_class_labels = ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-model = tf.keras.models.load_model(os.path.join(script_dir, "waste_classifier_finetuned.h5"))
+# model = tf.keras.models.load_model(os.path.join(script_dir, "waste_classifier_finetuned.h5"))
+
+
+# script_dir = os.path.dirname(os.path.abspath(__file__))
+
+
+try:
+    model = tf.keras.models.load_model(
+        os.path.join(script_dir, "waste_classifier_finetuned.h5"),
+        custom_objects={'InputLayer': Input}
+    )
+except Exception as e:
+    print(f"Failed to load model: {str(e)}")
+    
+    model = tf.keras.models.load_model(
+        os.path.join(script_dir, "waste_classifier_finetuned.h5"),
+        compile=False
+    )
+
 
 def classify_waste(image_bytes: bytes):
     try:
