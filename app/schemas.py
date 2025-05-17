@@ -9,7 +9,7 @@ class User(BaseModel):
     email: EmailStr
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ClassificationResultCreate(BaseModel):
     class_name: str
@@ -23,4 +23,4 @@ class ClassificationResult(BaseModel):
     user_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
